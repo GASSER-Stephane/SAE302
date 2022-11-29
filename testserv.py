@@ -20,12 +20,16 @@ def commande(data):
             reply = subprocess.getoutput("dir")[228:]
             conn.send(reply.encode())
             print(f"Checkbug : DIR FAIT")
-        elif cmd[1] == "mkdir toto":
-            reply = subprocess.getoutput("mkdir U:\Documents\BUT2\SAE3.02\SAE3.02\Toto")[228:]
-            conn.send(reply.encode())
-            print(f"Checkbug : MKDIR TOTO FAIT")
+        elif cmd[1][:6] == "mkdir ":
+            if len(cmd[1][6:]) != 0:
+                dos =cmd[1][6:]
+                reply = subprocess.getoutput(f"mkdir U:\Documents\BUT2\SAE3.02\SAE3.02\{dos}")[228:]
+                conn.send(reply.encode())
+                print(f"Checkbug : MKDIR {dos} FAIT")
+            else:
+                print("Impossible de créer un dossier sans nom")
         else:
-            print("Erreur : Commande Windows inconnue")
+            print("Erreur : Commande Windows incomplète ou inconnue")
     elif cmd[0] == "Powershell" and platform.platform()[:7] == "Windows":
         if cmd[1] == "get-process":
             reply = subprocess.getoutput("powershell.exe get-process")[228:]
@@ -33,8 +37,6 @@ def commande(data):
             print(f"Checkbug : Powershell:get-process FAIT")
         else:
             print("Erreur : Commande Powershell inconnue")
-
-
     elif data == "Linux:ls -la":
         reply = subprocess.getoutput("ls -la")
         conn.send(reply.encode())
