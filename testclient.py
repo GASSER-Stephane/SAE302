@@ -4,7 +4,7 @@ from threading import Lock
 from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QGridLayout, QLabel, QLineEdit, QPushButton
 from PyQt5.QtCore import QCoreApplication
 import csv
-
+from testserv import *
 
 class Client():
     def __init__(self, host, port):
@@ -12,6 +12,7 @@ class Client():
         self.__port = port
         self.__sock = socket.socket()
         self.__thread = None
+        # self.__msg = msg #//
 
 
 
@@ -29,19 +30,21 @@ class Client():
             print ("[+] Connexion réalisée")
             return 0
 
+    def connexion(self):
+        self.__sock.connect((self.__host, self.__port))
 
-    def dialogue(self):
-        msg = ""
-        self.__thread = threading.Thread(target=self.__reception, args=[self.__sock,])
+
+    def dialogue(self, msg):
+        self.__thread = threading.Thread(target=self.reception, args=[self.__sock,])
         self.__thread.start()
-        while msg != "kill" and msg != "disconnect" and msg != "reset":
-            msg = self.__envoi()
-        self.__thread.join()
-        self.__sock.close()
+        # while msg != "kill" and msg != "disconnect" and msg != "reset":
+        #     msg = self.envoi()
+        # self.__thread.join()
+        # self.__sock.close()
 
     # méthode d'envoi d'un message au travers la socket. Le résultat de cette methode est le message envoyé.
-    def __envoi(self):
-        msg = input("Message à envoyer au Serveur : ")
+    def envoi(self, msg):
+        # msg = input("Message à envoyer au Serveur : ")
         try:
             self.__sock.send(msg.encode())
         except BrokenPipeError:
@@ -52,14 +55,11 @@ class Client():
     """
 
 
-
-
-
-    def __reception(self, conn):
+    def reception(self, conn):
         msg =""
         while msg != "kill" and msg != "disconnect" and msg != "reset":
             msg = conn.recv(1024).decode('cp850')
-            print(msg)
+            print(f"{msg}")
 
 
 
@@ -75,37 +75,50 @@ class MainWindow(QMainWindow):
         widget.setLayout(grid)
         lab = QLabel("Host")
         lab4 = QLabel("Port")
+        lab3 = QLabel("Votre commande : ")
 
         self.__lab2 = QLabel("")
         self.__lab3 = QLabel("")
+        self.__lab4 = QLabel("")
         self.__text = QLineEdit("")
         self.__text2 = QLineEdit("")
-        ok = QPushButton("Ok")
+        self.__text3 = QLineEdit("")
+        self.__client = None
+        okcon = QPushButton("Connexion")
+        okcom = QPushButton("Envoyer")
 
         grid.addWidget(self.__lab3, 3, 1)
         grid.addWidget(self.__lab2, 4, 1)
+        grid.addWidget(self.__lab4, 1, 1)
         grid.addWidget(lab, 0, 0)
         grid.addWidget(lab4, 1, 0)
+        grid.addWidget(lab3, 2, 0)
         grid.addWidget(self.__text, 0, 1)
         grid.addWidget(self.__text2, 1, 1)
+        grid.addWidget(self.__text3, 2, 1)
+        self.__text.setText("127.0.0.1")
+        self.__text2.setText("15000")
 
-        grid.addWidget(ok, 5, 1)
-        ok.clicked.connect(self.connexion)
+        grid.addWidget(okcon, 5, 1)
+        grid.addWidget(okcom, 2, 2)
+        okcon.clicked.connect(self.okconnexion)
+        okcom.clicked.connect(self.okcommande)
         self.setWindowTitle("Application - Surveillance")
 
 
+    def okcommande(self):
+        msg = self.__text3.text()
+        self.__client.envoi(msg)
+        self.__lab2.setText(f"{self.__client.dialogue(msg)}")
+        self.__lab3.setText(f"Commande  : {msg}\n")
 
 
-    def connexion(self):
-        self.__lab2.setText(f"{self.__text.text()} | {self.__text2.text()}")
-        # print(Client.msg)
+    def okconnexion(self):
+        # self.__lab2.setText(f"Host / Port : {self.__text.text()} | {self.__text2.text()}")
         host = str(self.__text.text())
         port = int(self.__text2.text())
-        client = Client(host, port)
-        client.connect()
-        client.dialogue()
-        QCoreApplication.exit(0)
-        # par exemple accès la socket
+        self.__client = Client(host, port)
+        self.__client.connexion()
 
 
 
@@ -127,7 +140,8 @@ if __name__ == "__main__":
     #     port = int(sys.argv[2])
     #     # création de l'objet client qui est aussi un thread
     #     client = Client(host,port)
-
+    # client.connect()
+    # client.dialogue()
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
