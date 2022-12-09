@@ -13,7 +13,7 @@ def serveur():
     while msg != "kill" :
         msg = ""
         server_socket = socket.socket()
-        server_socket.bind(("0.0.0.0", 15000))
+        server_socket.bind(("0.0.0.0", 15001))
         server_socket.listen(1)
 
         print('Serveur en attente de connexion')
